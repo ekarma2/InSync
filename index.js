@@ -232,6 +232,18 @@ app.post("/edit-account", async (req, res) => {
   }
 
   try {
+    // Make sure no other user already has this email
+    const [existing] = await db.query(
+      "SELECT id FROM users WHERE LOWER(email) = ? AND id <> ?",
+      [email, req.session.user.id]
+    );
+    if (existing.length > 0) {
+      return res.render("edit-account", {
+        user: req.session.user,
+        error: "That email is already in use by another account."
+      });
+    }
+
     await db.query(
       "UPDATE users SET full_name = ?, email = ?, gender = ?, age = ?, country = ? WHERE id = ?",
       [full_name, email, gender, age, country, req.session.user.id]
