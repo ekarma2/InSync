@@ -15,7 +15,7 @@
     html, body {
       height: 100%;
       font-family: Arial, sans-serif;
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     #bg-video {
@@ -68,6 +68,7 @@
       padding: 40px 30px;
       border-radius: 12px;
       text-align: center;
+      width: 90%;
       max-width: 500px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       opacity: 0;
@@ -176,6 +177,21 @@
     .form-footer p a:hover{
       text-decoration: underline;
     }
+    @media (max-width: 480px) {
+  .splash-container {
+    padding: 30px 20px;
+  }
+  .splash-container h1 {
+    font-size: 1.6em;
+  }
+  .splash-buttons .btn {
+    margin: 5px;
+  }
+  .form-footer a {
+    word-break: break-all;   /* stops long email from overflowing */
+  }
+}
+
   </style>
 </head>
 <body>
