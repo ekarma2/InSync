@@ -1,3 +1,4 @@
+
 class FlowerGame extends Phaser.Scene {
      constructor() {
          super({ key: 'FlowerGame' });
@@ -35,39 +36,86 @@ class FlowerGame extends Phaser.Scene {
          this.scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', color: '#000' });
          this.livesText = this.add.text(620, 20, '❤️'.repeat(this.lives), { fontSize: '24px', color: '#000' });
  
+         // ADDED: Countdown timer
+         this.timeLeft = 30;
+         this.timerText = this.add.text(343, 27, 'Time: 30', 
+            {
+             fontSize: '25px',
+             color: '#000'
+         });
+ 
          this.dog = this.physics.add.image(400, 500, 'dog_sprite');
          this.dog.setScale(0.08);
          this.dog.setCollideWorldBounds(true);
  
          this.treats = this.physics.add.group();
  
-         this.treatSpawnEvent = this.time.addEvent({ // 👈 CAMBIO AQUÍ
-             delay: 1500,
-             callback: this.spawnTreat,
-             callbackScope: this,
-             loop: true
-         });
+         // Treat spawning will begin after the 3-2-1 countdown
+         this.treatSpawnEvent = null;
  
-         this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
+         // ADDED: Timer event starts after countdown
+         this.timerEvent = null;
  
          this.input.on('pointermove', pointer => {
              this.dog.x = Phaser.Math.Clamp(pointer.x, 50, 750);
          });
  
-         this.countdownText = this.add.text(400, 300, '3', { fontSize: '64px', color: '#000' }).setOrigin(0.5);
-         this.time.addEvent({ delay: 1000, repeat: 2, callback: this.updateCountdown, callbackScope: this });
+         this.countdownText = this.add.text(400, 300, '3', { fontSize: '50px', color: '#000' }).setOrigin(0.5);
+         this.time.addEvent({ 
+             delay: 1000, 
+             repeat: 2, 
+             callback: this.updateCountdown, 
+             callbackScope: this 
+         });
      }
  
      updateCountdown() {
-         let num = parseInt(this.countdownText.text);
-         if (num > 1) {
-             this.countdownText.setText(num - 1);
-         } else {
-             this.countdownText.destroy();
+            let num = parseInt(this.countdownText.text);
+
+            if (num > 1) {
+                this.countdownText.setText(num - 1);
+            } else {
+                this.countdownText.setText('GO!');
+
+                this.time.delayedCall(500, () => 
+                {
+                    this.countdownText.destroy();
+
+                    // Start spawning treats after countdown
+                    this.treatSpawnEvent = this.time.addEvent(
+                    {
+                        delay: 1500,
+                        callback: this.spawnTreat,
+                        callbackScope: this,
+                        loop: true
+                    });
+
+                    // Start the 30-second timer
+                    this.timerEvent = this.time.addEvent(
+                    {
+                        delay: 1000,
+                        callback: this.updateTimer,
+                        callbackScope: this,
+                        loop: true
+                    });
+                });
+            }
+        }
+
+     // ADDED: Update the countdown timer
+     updateTimer() 
+     {
+         this.timeLeft--;
+         this.timerText.setText(`Time: ${this.timeLeft}`);
+
+         if (this.timeLeft <= 0) {
+             this.timerEvent.remove();
+             this.endGame();
          }
      }
  
-     spawnTreat() {
+     spawnTreat() 
+     {
          const x = Phaser.Math.Between(50, 750);
          const treat = this.treats.create(x, 0, 'treat').setScale(0.12);
  
@@ -77,7 +125,8 @@ class FlowerGame extends Phaser.Scene {
          this.physics.add.overlap(this.dog, treat, this.collectTreat, null, this);
      }
  
-     collectTreat(dog, treat) {
+     collectTreat(dog, treat) 
+     {
          treat.destroy();
          this.score += 10;
          this.scoreText.setText(`Score: ${this.score}`);
@@ -87,7 +136,8 @@ class FlowerGame extends Phaser.Scene {
          }
      }
  
-     advanceLevel() {
+     advanceLevel() 
+     {
          this.currentLevel++;
          this.physics.pause();
  
@@ -100,7 +150,8 @@ class FlowerGame extends Phaser.Scene {
          });
      }
  
-     loseLife() {
+     loseLife() 
+     {
          this.lives--;
          this.livesText.setText('❤️'.repeat(this.lives));
  
@@ -113,19 +164,31 @@ class FlowerGame extends Phaser.Scene {
          }
      }
  
-     endGame(completed = false) {
+     endGame(completed = false) 
+     {
          this.physics.pause();
+
+         // ADDED: Stop the countdown timer
+         if (this.timerEvent) 
+        {
+             this.timerEvent.remove();
+         }
  
-         if (this.treatSpawnEvent) { // 👈 NUEVO
+         if (this.treatSpawnEvent) 
+            {
              this.treatSpawnEvent.remove();
          }
-         this.treats.clear(true, true); // 👈 NUEVO
+         this.treats.clear(true, true);
  
          let msg = completed || (this.currentLevel === 5 && this.score >= this.levelScoreThreshold * 5)
              ? `Congratulations!\nYou completed all levels!\nFinal Score: ${this.score}`
              : `Final Score: ${this.score}\nReached Level ${this.currentLevel}`;
  
          if (this.lives <= 0) msg = `Game Over!\nNo lives remaining\n${msg}`;
+
+         if (this.timeLeft <= 0) {
+             msg = `Time's Up!\n${msg}`;
+         }
  
          const finalText = this.add.text(400, 300, msg, {
              fontSize: '48px', color: '#000', align: 'center' }).setOrigin(0.5);
@@ -133,7 +196,8 @@ class FlowerGame extends Phaser.Scene {
          this.time.delayedCall(3000, () => window.location.href = '/games');
      }
  
-     update() {
+     update() 
+     {
          this.treats.getChildren().forEach(treat => {
              if (treat.y > 600) {
                  treat.destroy();
@@ -141,4 +205,5 @@ class FlowerGame extends Phaser.Scene {
              }
          });
      }
- }
+}
+
